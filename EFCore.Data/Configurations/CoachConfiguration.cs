@@ -7,6 +7,8 @@ internal class CoachConfiguration : IEntityTypeConfiguration<Coach>
 {
     public void Configure(EntityTypeBuilder<Coach> builder)
     {
+        builder.Property(c => c.Version).IsConcurrencyToken();
+
         var startDate = new DateTime(2024, 08, 27, 12, 0, 0, DateTimeKind.Local);
         builder.HasData(
             new Coach

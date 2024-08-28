@@ -222,3 +222,105 @@ async Task DeleteCoach()
 
     Console.WriteLine($"Coach {coachId} deleted successfully");
 }
+
+async Task TransactionExamples()
+{
+    var transaction = await context.Database.BeginTransactionAsync();
+    var league = new League
+    {
+        Name = "Transaction League"
+    };
+
+    await context.AddAsync(league);
+    await context.SaveChangesAsync();
+    await transaction.CreateSavepointAsync("CreatedLeague");
+
+    var coach = new Coach
+        {
+            Name = "Transaction Coach"
+        };
+
+    context.Add(coach);
+    context.SaveChanges();
+
+    var teams = new List<Team>
+    {
+        new Team
+        {
+            Name = "Transaction Team",
+            LeagueId = league.Id,
+            CoachId = coach.Id
+        }
+    };
+
+    await context.AddRangeAsync(teams);
+    await context.SaveChangesAsync();
+
+    try
+    {
+        await transaction.CommitAsync();
+    }
+    catch (Exception)
+    {
+        await transaction.RollbackToSavepointAsync("CreatedLeague");
+        throw;
+    }
+}
+
+async Task GlobalQueryFilters()
+{
+    var leagues = await context.Leagues.ToListAsync();
+    Console.WriteLine("List all leagues");
+    foreach (var l in leagues)
+    {
+        Console.WriteLine(l.Name);
+    }
+
+    var league = await context.Leagues.FindAsync(1);
+    if (league == null)
+    {
+        Console.WriteLine("League not found");
+        return;
+    }
+    league.IsDeleted = true;
+    Console.WriteLine("Soft Delete league with the id 1");
+    await context.SaveChangesAsync();
+
+    Console.WriteLine("List all leagues - global filter ignores 'deleted' record");
+    leagues = await context.Leagues.ToListAsync();
+    foreach (var l in leagues)
+    {
+        Console.WriteLine(l.Name);
+    }
+
+    Console.WriteLine("List all leagues - global filter is ignored in the query");
+    leagues = await context.Leagues
+        .IgnoreQueryFilters()
+        .ToListAsync();
+    foreach (var l in leagues)
+    {
+        Console.WriteLine(l.Name);
+    }
+}
+
+async Task ConcurrencyChecks()
+{
+    var team = await context.Teams.FindAsync(1);
+
+    if (team == null)
+    {
+        Console.WriteLine("Team Not Found");
+        return;
+    }
+
+    team.Name = "New Team With Concurrency Check 1";
+
+    try
+    {
+        await context.SaveChangesAsync();
+    }
+    catch (DbUpdateConcurrencyException ex)
+    {
+        Console.WriteLine(ex.Message);
+    }
+}

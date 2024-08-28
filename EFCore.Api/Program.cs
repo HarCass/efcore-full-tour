@@ -18,7 +18,11 @@ builder.Services.AddSingleton(builder.Configuration["ConnectionString"] ?? "");
 builder.Services.AddDbContext<FootballLeagueDbContext>((provider,options) =>
 {
     var connectionString = provider.GetRequiredService<string>();
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), options =>
+        {
+            options.CommandTimeout(30);
+            options.EnableRetryOnFailure(2, TimeSpan.FromSeconds(5), null);
+        })
         .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
         .LogTo(Console.WriteLine, LogLevel.Information);
 

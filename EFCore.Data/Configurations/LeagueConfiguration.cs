@@ -9,6 +9,8 @@ internal class LeagueConfiguration : IEntityTypeConfiguration<League>
     {
         builder.HasIndex(l => l.Name).IsUnique();
 
+        builder.HasQueryFilter(l => !l.IsDeleted);
+
         var startDate = new DateTime(2024, 08, 27, 12, 0, 0, DateTimeKind.Local);
         builder.HasData(
             new League

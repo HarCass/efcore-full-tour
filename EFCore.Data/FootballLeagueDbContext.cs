@@ -33,6 +33,7 @@ public class FootballLeagueDbContext : DbContext
         var entries = ChangeTracker
             .Entries<BaseDomainModel>()
             .Where(x => x.State is EntityState.Added or EntityState.Modified);
+
         foreach (var entry in entries)
         {
             switch (entry.State)
@@ -44,6 +45,7 @@ public class FootballLeagueDbContext : DbContext
                     entry.Entity.ModifiedDate = DateTime.Now;
                     break;
             }
+            entry.Entity.Version = Guid.NewGuid();
         }
 
         return base.SaveChangesAsync(cancellationToken);
